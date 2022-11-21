@@ -34,11 +34,11 @@ INFO_FIELDS = [
 
 def printUpDownFieldConfig(field):
 	print(field.down + ".label " + field.down)
-	print(field.down + ".type DERIVE")
+	print(field.down + ".type GAUGE")
 	print(field.down + ".min 0")
 	print(field.down + ".graph no")
 	print(field.up + ".label " + field.label)
-	print(field.up + ".type DERIVE")
+	print(field.up + ".type GAUGE")
 	print(field.up + ".min 0")
 	print(field.up + ".negative " + field.down)
 
