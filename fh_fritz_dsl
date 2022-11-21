@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+
+import sys,os
+from collections import namedtuple
+from fritzconnection import FritzConnection
+
+UpDownField = namedtuple("UpDownField", ["label", "up", "down"])
+ERROR_FIELDS = {
+	"NewCellDelin": "Cell Delin",
+	"NewLinkRetrain": "Link Retrain",
+	"NewInitErrors": "Init Errors",
+	"NewInitTimeouts": "Init Timeouts",
+	"NewLossOfFraming": "Loss of Framing",
+	"NewFECErrors": "FEC Errors",
+	"NewATUCFECErrors": "ATU FEC Errors",
+	"NewHECErrors": "HEC Errors",
+	"NewATUCHECErrors": "ATU HEC Errors",
+	"NewCRCErrors": "CRC Errors",
+	"NewATUCCRCErrors": "ATU CRC Errors",
+	"NewErroredSecs": "Error Seconds",
+	"NewSeverelyErroredSecs": "Severely Errored Seconds",
+}
+
+SPEED_FIELDS = [
+	UpDownField("Current Rate", "NewUpstreamCurrRate", "NewDownstreamCurrRate"),
+	UpDownField("Cable Max Rate", "NewUpstreamMaxRate", "NewDownstreamMaxRate"),
+]
+
+INFO_FIELDS = [
+	UpDownField("Noise Margin", "NewUpstreamNoiseMargin", "NewDownstreamNoiseMargin"),
+	UpDownField("Attenuation", "NewUpstreamAttenuation", "NewDownstreamAttenuation"),
+	UpDownField("Power", "NewUpstreamPower", "NewDownstreamPower"),
+]
+
+def printUpDownFieldConfig(field):
+	print(field.up + ".label " + field.label)
+	print(field.up + ".type DERIVE")
+	print(field.up + ".min 0")
+	print(field.up + ".negative " + field.down)
+	print(field.down + ".label " + field.down)
+	print(field.down + ".type DERIVE")
+	print(field.down + ".min 0")
+
+def printUpDownField(data, field):
+	print(field.up + ".value " + str(data[field.up]))
+	print(field.down + ".value " + str(data[field.down]))
+
+if len(sys.argv) >= 2:
+	if sys.argv[1] == "autoconf":
+		print("yes")
+		sys.exit(0)
+
+	if sys.argv[1] == "config":
+		print("multigraph dsl_errors")
+		print("graph_title DSL Errors")
+		print("graph_category network")
+		print("graph_args --base 1000")
+		print("graph_period minute")
+		for field, label in ERROR_FIELDS.items():
+			print(field + ".label " + label)
+			print(field + ".type DERIVE")
+			print(field + ".min 0")
+		print("")
+
+		print("multigraph dsl_speeds")
+		print("graph_title DSL Speed")
+		print("graph_vlabel bit/s")
+		print("graph_category network")
+		print("graph_args --base 1000")
+		print("graph_period minute")
+		for field in SPEED_FIELDS:
+			printUpDownFieldConfig(field)
+		print("")
+
+		print("multigraph dsl_status")
+		print("graph_title DSL Status")
+		print("graph_category network")
+		print("graph_args --base 1000")
+		print("graph_period minute")
+		for field in INFO_FIELDS:
+			printUpDownFieldConfig(field)
+
+		sys.exit(0)
+
+FRITZ_ADDRESS = os.getenv("fritz_address")
+FRITZ_PORT = os.getenv("fritz_port")
+FRITZ_USER = os.getenv("fritz_user", "munin")
+FRITZ_PASS = os.getenv("fritz_password")
+FRITZ_USETLS = bool(os.getenv("fritz_usetls", "false"))
+
+con = FritzConnection(address=FRITZ_ADDRESS, port=FRITZ_PORT, user=FRITZ_USER, password=FRITZ_PASS, use_tls=FRITZ_USETLS, use_cache=False)
+statistics = con.call_action("WANDSLInterfaceConfig1","GetStatisticsTotal")
+info = con.call_action("WANDSLInterfaceConfig1","GetInfo")
+
+for field in ERROR_FIELDS.keys():
+	print(field + ".value " + str(statistics[field]))
+for field in SPEED_FIELDS:
+	printUpDownField(info, field)
+for field in INFO_FIELDS:
+	printUpDownField(info, field)
