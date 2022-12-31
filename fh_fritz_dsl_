@@ -4,6 +4,17 @@ import sys,os
 from collections import namedtuple
 from fritzconnection import FritzConnection
 
+MODE = None
+if sys.argv[0].endswith("error"):
+	MODE = "error"
+elif sys.argv[0].endswith("status"):
+	MODE = "status"
+elif sys.argv[0].endswith("speed"):
+	MODE = "speed"
+if MODE == None:
+	print("Missing mode")
+	sys.exit(1)
+
 UpDownField = namedtuple("UpDownField", ["label", "up", "down"])
 ERROR_FIELDS = {
 	"NewCellDelin": "Cell Delin",
@@ -52,35 +63,30 @@ if len(sys.argv) >= 2:
 		sys.exit(0)
 
 	if sys.argv[1] == "config":
-		print("multigraph dsl_errors")
-		print("graph_title DSL Errors")
-		print("graph_category network")
-		print("graph_args --base 1000")
-		print("graph_period minute")
-		for field, label in ERROR_FIELDS.items():
-			print(field + ".label " + label)
-			print(field + ".type DERIVE")
-			print(field + ".min 0")
-		print("")
-
-		print("multigraph dsl_speeds")
-		print("graph_title DSL Speed")
-		print("graph_vlabel bit/s")
-		print("graph_category network")
-		print("graph_args --base 1000")
-		print("graph_period minute")
-		for field in SPEED_FIELDS:
-			printUpDownFieldConfig(field)
-		print("")
-
-		print("multigraph dsl_status")
-		print("graph_title DSL Status")
-		print("graph_category network")
-		print("graph_args --base 1000")
-		print("graph_period minute")
-		for field in INFO_FIELDS:
-			printUpDownFieldConfig(field)
-
+		if MODE == "error":
+			print("graph_title DSL Errors")
+			print("graph_category network")
+			print("graph_args --base 1000")
+			print("graph_period minute")
+			for field, label in ERROR_FIELDS.items():
+				print(field + ".label " + label)
+				print(field + ".type DERIVE")
+				print(field + ".min 0")
+		elif MODE == "speed":
+			print("graph_title DSL Speed")
+			print("graph_vlabel bit/s")
+			print("graph_category network")
+			print("graph_args --base 1000")
+			print("graph_period minute")
+			for field in SPEED_FIELDS:
+				printUpDownFieldConfig(field)
+		elif MODE == "status":
+			print("graph_title DSL Status")
+			print("graph_category network")
+			print("graph_args --base 1000")
+			print("graph_period minute")
+			for field in INFO_FIELDS:
+				printUpDownFieldConfig(field)
 		sys.exit(0)
 
 FRITZ_ADDRESS = os.getenv("fritz_address")
@@ -93,9 +99,12 @@ con = FritzConnection(address=FRITZ_ADDRESS, port=FRITZ_PORT, user=FRITZ_USER, p
 statistics = con.call_action("WANDSLInterfaceConfig1","GetStatisticsTotal")
 info = con.call_action("WANDSLInterfaceConfig1","GetInfo")
 
-for field in ERROR_FIELDS.keys():
-	print(field + ".value " + str(statistics[field]))
-for field in SPEED_FIELDS:
-	printUpDownField(info, field)
-for field in INFO_FIELDS:
-	printUpDownField(info, field)
+if MODE == "error":
+	for field in ERROR_FIELDS.keys():
+		print(field + ".value " + str(statistics[field]))
+elif MODE == "speed":
+	for field in SPEED_FIELDS:
+		printUpDownField(info, field)
+elif MODE == "status":
+	for field in INFO_FIELDS:
+		printUpDownField(info, field)
