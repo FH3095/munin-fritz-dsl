@@ -17,7 +17,7 @@ if MODE == None:
 
 UpDownField = namedtuple("UpDownField", ["label", "up", "down"])
 ERROR_FIELDS = {
-	"NewCellDelin": "Cell Delin",
+	"NewCellDelin": "Cell Delineation",
 	"NewLinkRetrain": "Link Retrain",
 	"NewInitErrors": "Init Errors",
 	"NewInitTimeouts": "Init Timeouts",
@@ -28,7 +28,7 @@ ERROR_FIELDS = {
 	"NewATUCHECErrors": "ATU HEC Errors",
 	"NewCRCErrors": "CRC Errors",
 	"NewATUCCRCErrors": "ATU CRC Errors",
-	"NewErroredSecs": "Error Seconds",
+	"NewErroredSecs": "Errored Seconds",
 	"NewSeverelyErroredSecs": "Severely Errored Seconds",
 }
 
